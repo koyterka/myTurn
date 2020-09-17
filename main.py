@@ -11,7 +11,9 @@ def main():
         name = raw_input("Hi! What's your name? ")
         if len(name) > 0:
             break
-    client = Client(name)
+
+    server_ip = '192.168.1.10'
+    client = Client(name, server_ip)
 
     # main program loop
     while True:

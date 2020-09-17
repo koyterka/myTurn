@@ -5,8 +5,8 @@ import time, sys
 
 
 class Client:
-    def __init__(self, name):
-        self.SERVER_ADDR = '192.168.1.10'
+    def __init__(self, name, server_addr):
+        self.SERVER_ADDR = server_addr
         self.name = name
         self.voip_params = {u'username': self.name,
                             u'sip_server_pwd': u'pas',
