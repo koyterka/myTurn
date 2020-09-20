@@ -5,6 +5,7 @@ import time
 import socket
 import requests
 import ast
+import json
 
 URL = "http://192.168.1.10:9898"
 ENDPOINT_NEW_USER = "/add-user-to-sip-exten-conf/"
@@ -80,7 +81,7 @@ def main():
             # you'll be making SIP call
             if req.status_code == 202:
                 caller=1
-                info_dict = ast.literal_eval(req.text)
+                info_dict = json.loads(req.text)
                 partner_name = info_dict["call"]
                 exten = info_dict["exten"]
                 partner_ip = info_dict["ip_to_send_data"]
@@ -88,15 +89,18 @@ def main():
                 # see if your partner is waiting for your call
                 while True:
                     status = get_user_status_value(partner_name)
+                    print status
                     if int(status) == 3:
                         break
+                    time.sleep(1)
                 break
 
             # you'll be waiting for SIP call
             if req.status_code == 230:
-                info_dict = ast.literal_eval(req.text)
+                info_dict = json.loads(req.text)
+                print info_dict
                 partner_ip = info_dict["ip_to_send_data"]
-                partner_name = info_dict["name_ip"]
+                partner_name = info_dict["call"]
                 final_endpoint = URL+ENDPOINT_USER_STATUS_RDY_TO_TALK + str(name)
                 req = requests.put(final_endpoint)
                 # let server know you're waiting for the call
@@ -111,11 +115,11 @@ def main():
 
 
         # get my ip
-        # s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        # s.connect(("8.8.8.8", 80))
-        # my_ip = s.getsockname()[0]
-        # s.close()
-        my_ip = '192.168.1.6'
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        my_ip = s.getsockname()[0]
+        s.close()
+        #my_ip = '192.168.1.8'
 
         client.set_exten(str(exten))
         client.set_caller(caller)
