@@ -4,8 +4,8 @@ import threading
 import time
 import socket
 import requests
-import ast
 import json
+from encryption_handler import Enc_Endpoint
 
 URL = "http://192.168.1.10:9898"
 ENDPOINT_NEW_USER = "/add-user-to-sip-exten-conf/"
@@ -21,6 +21,7 @@ exten = 0
 partner_ip = 0
 partner_name = ""
 
+
 def get_user_status_value(u_name):
     final_endpoint = URL + "/user-status/" + u_name
     req = requests.get(final_endpoint)
@@ -31,6 +32,13 @@ def main():
     global exten
     global partner_ip
     global partner_name
+
+    # get my ip
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    my_ip = s.getsockname()[0]
+    s.close()
+    # my_ip = '192.168.1.8'
 
     # get login from user
     while True:
@@ -85,6 +93,7 @@ def main():
                 partner_name = info_dict["call"]
                 exten = info_dict["exten"]
                 partner_ip = info_dict["ip_to_send_data"]
+                enc_endpoint = Enc_Endpoint(1, my_ip, partner_ip)
 
                 # see if your partner is waiting for your call
                 while True:
@@ -93,6 +102,9 @@ def main():
                     if int(status) == 3:
                         break
                     time.sleep(1)
+
+                # set Diffie-Hellman key for encrypted communication
+                enc_endpoint.exchange_keys()
                 break
 
             # you'll be waiting for SIP call
@@ -101,9 +113,15 @@ def main():
                 print info_dict
                 partner_ip = info_dict["ip_to_send_data"]
                 partner_name = info_dict["call"]
-                final_endpoint = URL+ENDPOINT_USER_STATUS_RDY_TO_TALK + str(name)
-                req = requests.put(final_endpoint)
+
+                # set Diffie-Hellman key for encrypted communication
+                enc_endpoint = Enc_Endpoint(0, my_ip, partner_ip)
+                key_exchange_thread = threading.Thread(target=enc_endpoint.exchange_keys)
+                key_exchange_thread.start()
+
                 # let server know you're waiting for the call
+                final_endpoint = URL + ENDPOINT_USER_STATUS_RDY_TO_TALK + str(name)
+                req = requests.put(final_endpoint)
                 if(req.status_code!=200):
                     print "Sorry, couldn't communicate with server."
                     break
@@ -111,15 +129,6 @@ def main():
                 break
 
             time.sleep(1)
-
-
-
-        # get my ip
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 80))
-        my_ip = s.getsockname()[0]
-        s.close()
-        #my_ip = '192.168.1.8'
 
         client.set_exten(str(exten))
         client.set_caller(caller)
@@ -132,7 +141,7 @@ def main():
             print "Waiting for partner..."
 
         # start text chat
-        chat = Convo(my_ip, partner_ip, partner_name)
+        chat = Convo(my_ip, partner_ip, partner_name, enc_endpoint)
         chat.start_convo()
 
         # wait for call to end

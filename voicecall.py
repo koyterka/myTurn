@@ -4,7 +4,7 @@ import pyaudio
 
 
 class VoiceCall:
-    def __init__(self, host, partner):
+    def __init__(self, host, partner, encryption_handler):
         self.host = host
         self.port = 9000
         self.addr = (partner, 9000)
@@ -13,6 +13,7 @@ class VoiceCall:
         self.s.bind((self.host, self.port))
         self.DONE_STATUS = 0
         self.MIC_ON = 0
+        self.encryption_handler = encryption_handler
 
         # audio stream config
         self.chunk_size = 1024
@@ -26,8 +27,9 @@ class VoiceCall:
                                           frames_per_buffer=self.chunk_size)
         while self.DONE_STATUS == 0:
             try:
-                data = self.s.recv(1024)
-                self.playing_stream.write(data)
+                encrypted_data = self.s.recv(1024)
+                decrypted_data = self.encryption_handler.decrypt_msg(encrypted_data)
+                self.playing_stream.write(decrypted_data)
             except:
                 pass
 
@@ -38,7 +40,8 @@ class VoiceCall:
         while self.MIC_ON == 1:
             try:
                 data = self.recording_stream.read(1024)
-                self.s.sendto(data, self.addr)
+                encrypted_data = self.encryption_handler.encrypt_msg(data)
+                self.s.sendto(encrypted_data, self.addr)
             except:
                 pass
 
@@ -71,3 +74,7 @@ class VoiceCall:
         self.playing_stream.stop_stream()
         self.playing_stream.close()
         self.p.terminate()
+
+# vc = VoiceCall('192.168.1.8', '192.168.1.6', None)
+# vc.start_voice_call()
+# vc.mic_on()

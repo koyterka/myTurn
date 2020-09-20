@@ -4,24 +4,29 @@ from voicecall import VoiceCall
 
 
 class Convo:
-    def __init__(self, host, partner, partner_name):
+    def __init__(self, host, partner, partner_name, encryption_handler):
         self.host = host       # my IP
         self.port = 4015
         self.addr = (partner, 4015)   # partner IP
+        self.partner_name = partner_name
+
         self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.s.bind((self.host, self.port))
-        self.partner_name = partner_name
+
         self.DONE_STATUS = 0
         self.MICMODE = 0
-        self.voicechat = VoiceCall(host, partner)
+        self.voicechat = VoiceCall(host, partner, encryption_handler)
+        self.encryption_handler = encryption_handler
 
     def receive_text(self):
         while self.DONE_STATUS == 0:
             try:
-                data, _ = self.s.recvfrom(1024)
-                data = data.decode('utf-8')
-                print(self.partner_name+": "+data)
+                data_encrypted, _ = self.s.recvfrom(1024)
+                #print "message before decryption:", data_encrypted
+                #data_encrypted = data_encrypted.decode('utf-8')
+                data_deciphered = self.encryption_handler.decrypt_msg(data_encrypted)
+                print(self.partner_name+": "+data_deciphered)
             except:
                 pass
 
@@ -35,7 +40,10 @@ class Convo:
                 elif text == 'm':
                     self.voicechat.mic_switch()
                 elif len(text) > 0:
-                    self.s.sendto(text.encode('utf-8'), self.addr)
+                    text_encrypted = self.encryption_handler.encrypt_msg(text)
+                    #print "message after encryption:", text_encrypted
+                    #self.s.sendto(text_encrypted.encode('utf-8'), self.addr)
+                    self.s.sendto(text_encrypted, self.addr)
                     continue
             except:
                 pass

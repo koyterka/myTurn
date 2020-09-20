@@ -1,5 +1,6 @@
 import random
 import socket
+import sys
 
 class Enc_Endpoint():
     def __init__(self, caller, host, partner):
@@ -9,11 +10,11 @@ class Enc_Endpoint():
         if caller==1:
             self.public_key1 = random.randint(50, 200)
             self.public_key2 = None
-            # print "{%s,%s}" % (self.public_key1, self.private_key)
+            #print "{%s,%s}" % (self.public_key1, self.private_key)
         else:
             self.public_key1 = None
             self.public_key2 = random.randint(50, 200)
-            # print "{%s,%s}" % (self.public_key2, self.private_key)
+            #print "{%s,%s}" % (self.public_key2, self.private_key)
 
         self.full_key = None
         self.received_partial_key = None
@@ -23,6 +24,7 @@ class Enc_Endpoint():
         self.addr = (partner, 4015)  # partner IP
         self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.s.settimeout(1.0)
         self.s.bind((self.host, self.port))
 
     def exchange_keys(self):
@@ -31,14 +33,14 @@ class Enc_Endpoint():
 
     def exchange_public_keys(self):
         if self.caller == 1:
-            print "SENDING PUBLIC KEY 1" + self.public_key1
-            self.s.sendto(self.public_key1.encode('utf-8'), self.addr)
+            print "Sending public key 1:", self.public_key1
+            self.s.sendto(str(self.public_key1).encode('utf-8'), self.addr)
             while True:
                 try:
                     data, _ = self.s.recvfrom(1024)
                     data = data.decode('utf-8')
-                    print 'RECEIVED PUBLIC KEY 2' + data
-                    self.public_key2 = data
+                    print 'Received public key 2:', data
+                    self.public_key2 = int(data)
                     break
                 except:
                     pass
@@ -47,24 +49,24 @@ class Enc_Endpoint():
                 try:
                     data, _ = self.s.recvfrom(1024)
                     data = data.decode('utf-8')
-                    print 'RECEIVED PUBLIC KEY 1' + data
-                    self.public_key1 = data
+                    print 'Received public key 1:', data
+                    self.public_key1 = int(data)
                     break
                 except:
                     pass
-            print "SENDING PUBLIC KEY 2" + self.public_key2
-            self.s.sendto(self.public_key2.encode('utf-8'), self.addr)
+            print "Sending public key 2:", self.public_key2
+            self.s.sendto(str(self.public_key2).encode('utf-8'), self.addr)
 
     def exchange_partial_keys(self):
         partial_key = self.generate_partial_key()
-        print "SENDING PARTIAL KEY" + partial_key
-        self.s.sendto(partial_key.encode('utf-8'), self.addr)
+        print "Sending partial key:" , partial_key
+        self.s.sendto(str(partial_key).encode('utf-8'), self.addr)
         while True:
             try:
                 data, _ = self.s.recvfrom(1024)
                 data = data.decode('utf-8')
-                print 'RECEIVED PARTIAL KEY' + data
-                self.received_partial_key = data
+                print 'Received partial key:', data
+                self.received_partial_key = int(data)
                 break
             except:
                 pass
@@ -80,7 +82,7 @@ class Enc_Endpoint():
         full_key = self.received_partial_key**self.private_key
         full_key = full_key%self.public_key2
         self.full_key = full_key
-        print "GENERATED FULL KEY:", full_key
+        print "Generated full key:", full_key
 
     def get_full_key(self):
         return self.full_key
@@ -100,18 +102,22 @@ class Enc_Endpoint():
         return decrypted_msg
 
 
-mark = Enc_Endpoint(caller = 1, host= '192.168.1.6', partner='192.168.1.8')
-bob = Enc_Endpoint(caller = 0, host = '192.168.1.8', partner='192.168.1.6')
+# bob = Enc_Endpoint(1, '192.168.1.8', '192.168.1.6')
+# bob.exchange_keys()
 
-mark.exchange_keys()
-bob.exchange_keys()
-
-
-msg = "eloszka kokoszka"
-enc_msg = bob.encrypt_msg(msg)
-dec_msg = bob.decrypt_msg(enc_msg)
-
-print dec_msg
-
-
+# msg = 'hej'
+# lenght = sys.getsizeof(msg)
+# ciphered = bob.encrypt_msg(msg)
+# lenght2 = sys.getsizeof(ciphered)
+#
+# msg2 = "eloszka"
+# lenght3 = sys.getsizeof(msg2)
+# cip2 = bob.encrypt_msg(msg2)
+# cip_en = cip2.encode('utf-8')
+# print "enc:" , cip_en
+# print "dec:", cip_en.decode('utf-8')
+# lenght4 = sys.getsizeof(cip2)
+# print lenght, lenght2
+#
+# print lenght3, lenght4
 
