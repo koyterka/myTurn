@@ -4,13 +4,14 @@ from voicecall import VoiceCall
 
 
 class Convo:
-    def __init__(self, host, partner):
+    def __init__(self, host, partner, partner_name):
         self.host = host       # my IP
         self.port = 4015
         self.addr = (partner, 4015)   # partner IP
         self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.s.bind((self.host, self.port))
+        self.partner_name = partner_name
         self.DONE_STATUS = 0
         self.MICMODE = 0
         self.voicechat = VoiceCall(host, partner)
@@ -20,7 +21,7 @@ class Convo:
             try:
                 data, _ = self.s.recvfrom(1024)
                 data = data.decode('utf-8')
-                print("Partner: "+data)
+                print(self.partner_name+": "+data)
             except:
                 pass
 

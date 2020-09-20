@@ -9,7 +9,7 @@ class Client:
         self.SERVER_ADDR = server_addr
         self.name = name
         self.voip_params = {u'username': self.name,
-                            u'sip_server_pwd': u'pas',
+                            u'sip_server_pwd': u'12345678abcd',
                             u'sip_server_address': self.SERVER_ADDR,
                             u'sip_server_user': self.name,
                             u'sip_server_transport': u'udp',
@@ -21,6 +21,10 @@ class Client:
         self.myVoip.init_lib(self.voip_params, self.call_events)
         print "Registering the account on the Sip Server..."
         self.myVoip.register_account()
+        self.caller = 0
+
+    def set_caller(self, caller):
+        self.caller = caller
 
     def set_exten(self, extension):
         self.extension = extension
@@ -61,7 +65,7 @@ class Client:
             print "Received unhandled event type:%s --> %s" % (voip_event_type, voip_event)
 
     def start_call(self):
-        if self.extension!='wait':
+        if self.caller == 1:
             print "Making a call dialing the extension: %s" % self.extension
             self.myVoip.make_call(self.extension)
 
