@@ -36,11 +36,11 @@ def main():
     global partner_name
 
     # get my ip
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(("8.8.8.8", 80))
-    my_ip = s.getsockname()[0]
-    s.close()
-    # my_ip = '192.168.1.8'
+    # s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    # s.connect(("8.8.8.8", 80))
+    # my_ip = s.getsockname()[0]
+    # s.close()
+    my_ip = '192.168.1.6'
 
     # get login from user
     while True:
@@ -88,11 +88,13 @@ def main():
 
             # you'll be making SIP call
             if req.status_code == 202:
+                print 'youll be calling'
                 caller=1
                 info_dict = json.loads(req.text)
                 partner_name = info_dict["call"]
                 exten = info_dict["exten"]
                 partner_ip = info_dict["ip_to_send_data"]
+                print info_dict
                 enc_endpoint = Enc_Endpoint(1, my_ip, partner_ip)
 
                 # see if your partner is waiting for your call
@@ -109,6 +111,7 @@ def main():
 
             # you'll be waiting for SIP call
             if req.status_code == 230:
+                print 'youll be waiting'
                 info_dict = json.loads(req.text)
                 print info_dict
                 partner_ip = info_dict["ip_to_send_data"]

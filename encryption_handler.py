@@ -102,7 +102,7 @@ class Enc_Endpoint():
         return decrypted_msg
 
 
-# bob = Enc_Endpoint(1, '192.168.1.8', '192.168.1.6')
+# bob = Enc_Endpoint(1, '192.168.1.6', '192.168.1.8')
 # bob.exchange_keys()
 
 # msg = 'hej'
