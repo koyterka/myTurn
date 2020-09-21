@@ -16,6 +16,7 @@ ENDPOINT_PEER = "/get-peer/"
 ENDPOINT_USER_IP = "/user-ip/"
 ENDPOINT_USER_STATUS_RDY_TO_TALK = "/update-status-rdy-to-talk/"
 
+name=""
 caller=0
 exten = 0
 partner_ip = 0
@@ -28,6 +29,7 @@ def get_user_status_value(u_name):
     return req.text
 
 def main():
+    global name
     global caller
     global exten
     global partner_ip
@@ -44,14 +46,12 @@ def main():
     while True:
         name = raw_input("Hi! What's your name? ")
         if len(name) > 0:
-            break
-
-    # put user into SIP server files
-    final_endpoint = URL + ENDPOINT_NEW_USER + str(name)
-    req = requests.post(final_endpoint)
-    if(req.status_code!=200):
-        print "Sorry, couldn't put you into SIP server."
-        return
+            final_endpoint = URL + ENDPOINT_NEW_USER + str(name)
+            req = requests.post(final_endpoint)
+            if (req.status_code != 200):
+                print "Sorry, that name is already taken."
+            else:
+                break
 
     server_ip = '192.168.1.10'
     client = Client(name, server_ip)
@@ -158,7 +158,11 @@ def main():
         # main loop repeats
 
     # kill the client
+    final_endpoint = URL + "/delete-user/" + str(name)
+    req = requests.delete(final_endpoint)
     client.end()
+
+
 
 
 if __name__ == '__main__':

@@ -18,30 +18,30 @@ class VoiceCall:
         # audio stream config
         self.chunk_size = 1024
         self.audio_format = pyaudio.paInt16
-        self.channels = 2
+        self.channels = 1
         self.rate = 44100
         self.p = pyaudio.PyAudio()
 
     def receive_data(self):
         self.playing_stream = self.p.open(format=self.audio_format, channels=self.channels, rate=self.rate, output=True,
-                                          frames_per_buffer=self.chunk_size)
+                                          frames_per_buffer=self.chunk_size, output_device_index = 0)
         while self.DONE_STATUS == 0:
             try:
-                encrypted_data = self.s.recv(1024)
-                decrypted_data = self.encryption_handler.decrypt_msg(encrypted_data)
-                self.playing_stream.write(decrypted_data)
+                encrypted_data = self.s.recvfrom(1024)
+                #decrypted_data = self.encryption_handler.decrypt_msg(encrypted_data)
+                self.playing_stream.write(encrypted_data)
             except:
                 pass
 
     def send_data(self):
-        self.recording_stream = self.p.open(format=self.audio_format, channels=self.channels, rate=self.rate,
+        self.recording_stream = self.p.open(format=self.audio_format, channels=1, rate=self.rate,
                                             input=True,
-                                            frames_per_buffer=self.chunk_size)
+                                            frames_per_buffer=self.chunk_size, input_device_index=2)
         while self.MIC_ON == 1:
             try:
                 data = self.recording_stream.read(1024)
-                encrypted_data = self.encryption_handler.encrypt_msg(data)
-                self.s.sendto(encrypted_data, self.addr)
+                #encrypted_data = self.encryption_handler.encrypt_msg(data)
+                self.s.sendto(data, self.addr)
             except:
                 pass
 
@@ -75,6 +75,6 @@ class VoiceCall:
         self.playing_stream.close()
         self.p.terminate()
 
-# vc = VoiceCall('192.168.1.8', '192.168.1.6', None)
-# vc.start_voice_call()
-# vc.mic_on()
+vc = VoiceCall('192.168.1.8', '192.168.1.6', None)
+vc.start_voice_call()
+#vc.mic_on()
