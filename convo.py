@@ -23,10 +23,9 @@ class Convo:
         while self.DONE_STATUS == 0:
             try:
                 data_encrypted, _ = self.s.recvfrom(1024)
-                #print "message before decryption:", data_encrypted
-                #data_encrypted = data_encrypted.decode('utf-8')
-                data_deciphered = self.encryption_handler.decrypt_msg(data_encrypted)
-                print(self.partner_name+": "+data_deciphered)
+                # print "message before decryption:", data_encrypted
+                data_deciphered = self.encryption_handler.aes_decrypt(data_encrypted)
+                print(self.partner_name+": " + data_deciphered)
             except:
                 pass
 
@@ -40,9 +39,8 @@ class Convo:
                 elif text == 'm':
                     self.voicechat.mic_switch()
                 elif len(text) > 0:
-                    text_encrypted = self.encryption_handler.encrypt_msg(text)
-                    #print "message after encryption:", text_encrypted
-                    #self.s.sendto(text_encrypted.encode('utf-8'), self.addr)
+                    text_encrypted = self.encryption_handler.aes_encrypt(text)
+                    # print "message after encryption:", text_encrypted
                     self.s.sendto(text_encrypted, self.addr)
                     continue
             except:
@@ -60,4 +58,3 @@ class Convo:
         self.DONE_STATUS = 1
         self.s.close()
         self.voicechat.end_voice_call()
-

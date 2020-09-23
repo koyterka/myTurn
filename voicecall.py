@@ -21,27 +21,29 @@ class VoiceCall:
         self.channels = 1
         self.rate = 44100
         self.p = pyaudio.PyAudio()
+        self.recording_stream = None
+        self.playing_stream = None
 
     def receive_data(self):
         self.playing_stream = self.p.open(format=self.audio_format, channels=self.channels, rate=self.rate, output=True,
-                                          frames_per_buffer=self.chunk_size, output_device_index = 0)
+                                          frames_per_buffer=self.chunk_size)
         while self.DONE_STATUS == 0:
             try:
-                encrypted_data = self.s.recvfrom(1024)
-                #decrypted_data = self.encryption_handler.decrypt_msg(encrypted_data)
-                self.playing_stream.write(encrypted_data)
+                encrypted_data = self.s.recvfrom(16)
+                decrypted_data = self.encryption_handler.aes_decrypt(encrypted_data)
+                self.playing_stream.write(decrypted_data)
             except:
                 pass
 
     def send_data(self):
         self.recording_stream = self.p.open(format=self.audio_format, channels=1, rate=self.rate,
                                             input=True,
-                                            frames_per_buffer=self.chunk_size, input_device_index=2)
+                                            frames_per_buffer=self.chunk_size)
         while self.MIC_ON == 1:
             try:
-                data = self.recording_stream.read(1024)
-                #encrypted_data = self.encryption_handler.encrypt_msg(data)
-                self.s.sendto(data, self.addr)
+                data = self.recording_stream.read(16)
+                encrypted_data = self.encryption_handler.aes_encrypt(data)
+                self.s.sendto(encrypted_data, self.addr)
             except:
                 pass
 
@@ -64,8 +66,10 @@ class VoiceCall:
 
     def mic_switch(self):
         if self.MIC_ON == 0:
+            print "Your mic is now on!"
             self.mic_on()
         else:
+            print "Your mic is now off!"
             self.mic_off()
 
     def end_voice_call(self):
@@ -74,7 +78,3 @@ class VoiceCall:
         self.playing_stream.stop_stream()
         self.playing_stream.close()
         self.p.terminate()
-
-vc = VoiceCall('192.168.1.8', '192.168.1.6', None)
-vc.start_voice_call()
-#vc.mic_on()

@@ -1,7 +1,6 @@
 from most.voip.api import VoipLib
 from most.voip.constants import VoipEvent
-
-import time, sys
+import time
 
 
 class Client:
@@ -16,12 +15,13 @@ class Client:
                             u'log_level': 1,
                             u'debug': True}
         self.CALL_ACTIVE = 0
-        self.myVoip=VoipLib()
+        self.myVoip = VoipLib()
         print "Initializing the Voip Lib..."
         self.myVoip.init_lib(self.voip_params, self.call_events)
         print "Registering the account on the Sip Server..."
         self.myVoip.register_account()
         self.caller = 0
+        self.extension = None
 
     def set_caller(self, caller):
         self.caller = caller
@@ -33,30 +33,29 @@ class Client:
         print "Received event type:%s Event:%s -> Params: %s" % (voip_event_type, voip_event, params)
 
         # event triggered when the account registration has been confirmed by the remote Sip Server
-        if (voip_event == VoipEvent.ACCOUNT_REGISTERED):
+        if voip_event == VoipEvent.ACCOUNT_REGISTERED:
             print "Account registered"
 
         # event triggered when a new call is incoming
-        elif (voip_event == VoipEvent.CALL_INCOMING):
+        elif voip_event == VoipEvent.CALL_INCOMING:
             print "INCOMING CALL From %s" % params["from"]
             time.sleep(2)
             print "Answering..."
             self.myVoip.answer_call()
 
         # event  triggered when a call has been established
-        elif (voip_event == VoipEvent.CALL_ACTIVE):
+        elif voip_event == VoipEvent.CALL_ACTIVE:
             print "The call with %s has been established" % self.myVoip.get_call().get_remote_uri()
-            self.CALL_ACTIVE=1
+            self.CALL_ACTIVE = 1
 
         # events triggered when the call ends for some reasons
         elif (voip_event in [VoipEvent.CALL_REMOTE_DISCONNECTION_HANGUP, VoipEvent.CALL_REMOTE_HANGUP,
                              VoipEvent.CALL_HANGUP]):
             print "End of call."
-            self.CALL_ACTIVE=0
-            #self.myVoip.destroy_lib()
+            self.CALL_ACTIVE = 0
 
         # event triggered when the library was destroyed
-        elif (voip_event == VoipEvent.LIB_DEINITIALIZED):
+        elif voip_event == VoipEvent.LIB_DEINITIALIZED:
             print "Lib Destroyed. Exiting from the app."
             return
 

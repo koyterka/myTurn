@@ -16,11 +16,12 @@ ENDPOINT_PEER = "/get-peer/"
 ENDPOINT_USER_IP = "/user-ip/"
 ENDPOINT_USER_STATUS_RDY_TO_TALK = "/update-status-rdy-to-talk/"
 
-name=""
-caller=0
+name = ""
+caller = 0
 exten = 0
 partner_ip = 0
 partner_name = ""
+server_ip = '192.168.1.10'
 
 
 def get_user_status_value(u_name):
@@ -28,7 +29,9 @@ def get_user_status_value(u_name):
     req = requests.get(final_endpoint)
     return req.text
 
+
 def main():
+    global server_ip
     global name
     global caller
     global exten
@@ -40,7 +43,6 @@ def main():
     s.connect(("8.8.8.8", 80))
     my_ip = s.getsockname()[0]
     s.close()
-    # my_ip = '192.168.1.8'
 
     # get login from user
     while True:
@@ -48,19 +50,17 @@ def main():
         if len(name) > 0:
             final_endpoint = URL + ENDPOINT_NEW_USER + str(name)
             req = requests.post(final_endpoint)
-            if (req.status_code != 200):
+            if req.status_code != 200:
                 print "Sorry, that name is already taken."
             else:
                 break
 
-    server_ip = '192.168.1.10'
     client = Client(name, server_ip)
-
 
     # main program loop
     while True:
         want = raw_input("Press Enter when you're ready to talk, " + name + '!'
-                        + '\n Type "quit" if you want to quit.')
+                         + '\n Type "quit" if you want to quit.')
         if want == 'quit':
             print "Bye!"
             break
@@ -68,10 +68,9 @@ def main():
         # let server know you're ready to talk.
         final_endpoint = URL + ENDPOINT_USER_STATUS_RDY + str(name)
         req = requests.put(final_endpoint)
-        if (req.status_code != 200):
+        if req.status_code != 200:
             print "Sorry, couldn't let the server know you're ready."
             break
-
 
         # find a partner to talk to
         final_endpoint = URL + ENDPOINT_PEER + str(name)
@@ -88,7 +87,7 @@ def main():
 
             # you'll be making SIP call
             if req.status_code == 202:
-                caller=1
+                caller = 1
                 info_dict = json.loads(req.text)
                 partner_name = info_dict["call"]
                 exten = info_dict["exten"]
@@ -98,7 +97,6 @@ def main():
                 # see if your partner is waiting for your call
                 while True:
                     status = get_user_status_value(partner_name)
-                    print status
                     if int(status) == 3:
                         break
                     time.sleep(1)
@@ -110,7 +108,6 @@ def main():
             # you'll be waiting for SIP call
             if req.status_code == 230:
                 info_dict = json.loads(req.text)
-                print info_dict
                 partner_ip = info_dict["ip_to_send_data"]
                 partner_name = info_dict["call"]
 
@@ -122,7 +119,7 @@ def main():
                 # let server know you're waiting for the call
                 final_endpoint = URL + ENDPOINT_USER_STATUS_RDY_TO_TALK + str(name)
                 req = requests.put(final_endpoint)
-                if(req.status_code!=200):
+                if req.status_code != 200:
                     print "Sorry, couldn't communicate with server."
                     break
 
@@ -132,6 +129,7 @@ def main():
 
         client.set_exten(str(exten))
         client.set_caller(caller)
+
         # ***************************** CALL *********************************
         call = threading.Thread(target=client.start_call())
         call.start()
@@ -154,15 +152,13 @@ def main():
                 break
 
         final_endpoint = URL + ENDPOINT_USER_STATUS_BUSY + str(name)
-        req = requests.put(final_endpoint)
+        requests.put(final_endpoint)
         # main loop repeats
 
     # kill the client
     final_endpoint = URL + "/delete-user/" + str(name)
-    req = requests.delete(final_endpoint)
+    requests.delete(final_endpoint)
     client.end()
-
-
 
 
 if __name__ == '__main__':
